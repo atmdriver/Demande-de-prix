@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur VTC</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        input, button { margin: 5px; padding: 10px; font-size: 16px; }
+        p { font-size: 18px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h3>Simulateur de Prix VTC</h3>
+
+    <label>Adresse de départ :</label>
+    <input type="text" id="startAddress" placeholder="Ex: Paris, France">
+
+    <label>Adresse d'arrivée :</label>
+    <input type="text" id="endAddress" placeholder="Ex: Lyon, France">
+
+    <button onclick="calculatePrice()">Calculer</button>
+
+    <p id="result">Prix estimé : - €</p>
+
+    <script>
+        const apiKey = "5b3ce3597851110001cf6248ce52305d63b541e9b030f687415cb54f"; // Remplace avec ta clé API
+
+        async function getCoordinates(address) {
+            const geoUrl = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(address)}`;
+
+            try {
+                const response = await fetch(geoUrl);
+                const data = await response.json();
+                
+                if (data.features.length === 0) {
+                    throw new Error("Adresse introuvable.");
+                }
+
+                const coords = data.features[0].geometry.coordinates;
+                return { lng: coords[0], lat: coords[1] };
+            } catch (error) {
+                console.error(error);
+                alert("Erreur lors du géocodage de l'adresse.");
+                return null;
+            }
+        }
+
+        async function calculatePrice() {
+            const startAddress = document.getElementById("startAddress").value;
+            const endAddress = document.getElementById("endAddress").value;
+
+            if (!startAddress || !endAddress) {
+                alert("Veuillez entrer les deux adresses.");
+                return;
+            }
+
+            const startCoords = await getCoordinates(startAddress);
+            const endCoords = await getCoordinates(endAddress);
+
+            if (!startCoords || !endCoords) {
+                return;
+            }
+
+            const routeUrl = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords.lng},${startCoords.lat}&end=${endCoords.lng},${endCoords.lat}`;
+
+            try {
+                const response = await fetch(routeUrl);
+                const data = await response.json();
+
+                if (!data.routes || data.routes.length === 0) {
+                    throw new Error("Itinéraire non trouvé.");
+                }
+
+                const distanceKm = data.routes[0].summary.distance / 1000;
+
+                // Tarification
+                const baseFare = 2;
+                const perKm = 1.5;
+                const price = baseFare + (distanceKm * perKm);
+
+                document.getElementById("result").innerText = `Prix estimé : ${price.toFixed(2)} €`;
+            } catch (error) {
+                console.error(error);
+                document.getElementById("result").innerText = "Erreur lors du calcul.";
+            }
+        }
+    </script>
+</body>
+</html>
