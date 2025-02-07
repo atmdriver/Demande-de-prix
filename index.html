@@ -32,23 +32,6 @@
             font-size: 18px;
             font-weight: bold;
         }
-        .autocomplete-suggestions {
-            position: absolute;
-            background: white;
-            border: 1px solid #ddd;
-            max-height: 150px;
-            overflow-y: auto;
-            width: 80%;
-            left: 10%;
-            z-index: 1000;
-        }
-        .autocomplete-suggestions div {
-            padding: 10px;
-            cursor: pointer;
-        }
-        .autocomplete-suggestions div:hover {
-            background: #f0f0f0;
-        }
     </style>
 </head>
 <body>
@@ -56,11 +39,9 @@
 
     <label>Adresse de départ :</label>
     <input type="text" id="startAddress" placeholder="Ex: Paris, France">
-    <div id="startSuggestions" class="autocomplete-suggestions"></div>
 
     <label>Adresse d'arrivée :</label>
     <input type="text" id="endAddress" placeholder="Ex: Lyon, France">
-    <div id="endSuggestions" class="autocomplete-suggestions"></div>
 
     <button onclick="calculatePrice()">Calculer</button>
 
@@ -69,53 +50,12 @@
     <script>
         const apiKey = "5b3ce3597851110001cf6248ce52305d63b541e9b030f687415cb54f"; // Remplace avec ta clé API
 
-        async function getAddressSuggestions(query, inputElement, suggestionsContainer) {
-            if (query.length < 3) {
-                suggestionsContainer.innerHTML = "";
-                return;
-            }
-
-            const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${apiKey}&text=${encodeURIComponent(query)}`;
-
+        async function getCoordinates(address) {
+            const url = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(address)}`;
             try {
                 const response = await fetch(url);
                 const data = await response.json();
 
-                if (!data.features || data.features.length === 0) {
-                    suggestionsContainer.innerHTML = "";
-                    return;
-                }
-
-                suggestionsContainer.innerHTML = "";
-                data.features.forEach(feature => {
-                    const div = document.createElement("div");
-                    div.textContent = feature.properties.label;
-                    div.onclick = () => {
-                        inputElement.value = feature.properties.label;
-                        suggestionsContainer.innerHTML = "";
-                    };
-                    suggestionsContainer.appendChild(div);
-                });
-            } catch (error) {
-                console.error("Erreur lors de la récupération des suggestions : ", error);
-            }
-        }
-
-        document.getElementById("startAddress").addEventListener("input", function () {
-            getAddressSuggestions(this.value, this, document.getElementById("startSuggestions"));
-        });
-
-        document.getElementById("endAddress").addEventListener("input", function () {
-            getAddressSuggestions(this.value, this, document.getElementById("endSuggestions"));
-        });
-
-        async function getCoordinates(address) {
-            const geoUrl = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(address)}`;
-
-            try {
-                const response = await fetch(geoUrl);
-                const data = await response.json();
-               
                 if (!data.features || data.features.length === 0) {
                     throw new Error("Adresse introuvable.");
                 }
@@ -123,8 +63,8 @@
                 const coords = data.features[0].geometry.coordinates;
                 return { lng: coords[0], lat: coords[1] };
             } catch (error) {
-                console.error(error);
-                alert("Erreur lors du géocodage de l'adresse.");
+                console.error("Erreur géocodage:", error);
+                alert("Erreur : Impossible de récupérer les coordonnées.");
                 return null;
             }
         }
@@ -151,26 +91,28 @@
                 const response = await fetch(routeUrl);
                 const data = await response.json();
 
-                if (!data.routes || data.routes.length === 0) {
+                if (!data.routes || data.routes.length === 0 || !data.routes[0].summary) {
                     throw new Error("Itinéraire non trouvé.");
                 }
 
-                const distanceKm = data.routes[0].summary.distance / 1000;
+                const distanceMeters = data.routes[0].summary.distance;
+                const distanceKm = distanceMeters / 1000;
 
-                if (distanceKm <= 0 || isNaN(distanceKm)) {
+                if (isNaN(distanceKm) || distanceKm <= 0) {
                     throw new Error("Distance invalide.");
                 }
 
+                // Tarification mise à jour
                 const baseFare = 2;  // Prix de départ
                 const perKm = 1.5;    // Prix par km
                 const minPrice = 5;   // Prix minimum
 
                 let price = baseFare + (distanceKm * perKm);
-                price = Math.max(price, minPrice);
+                price = Math.max(price, minPrice); // S'assurer que le prix est au moins le minimum
 
                 document.getElementById("result").innerText = `Prix estimé : ${price.toFixed(2)} €`;
             } catch (error) {
-                console.error(error);
+                console.error("Erreur calcul:", error);
                 document.getElementById("result").innerText = "Erreur lors du calcul.";
             }
         }
