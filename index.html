@@ -4,69 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulateur VTC</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        input, button {
-            margin: 5px;
-            padding: 12px;
-            font-size: 16px;
-            width: 80%;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        p {
-            font-size: 18px;
-            font-weight: bold;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h3>Simulateur de Prix VTC</h3>
+    <div class="container">
+        <h3>Simulateur de Prix VTC</h3>
 
-    <label>Adresse de départ :</label>
-    <input type="text" id="startAddress" placeholder="Ex: Paris, France">
+        <label>Adresse de départ :</label>
+        <input type="text" id="startAddress" placeholder="Ex: Paris, France" oninput="getAddressSuggestions(this.value, 'start')">
+        <div id="startSuggestions" class="autocomplete-suggestions"></div>
 
-    <label>Adresse d'arrivée :</label>
-    <input type="text" id="endAddress" placeholder="Ex: Lyon, France">
+        <label>Adresse d'arrivée :</label>
+        <input type="text" id="endAddress" placeholder="Ex: Lyon, France" oninput="getAddressSuggestions(this.value, 'end')">
+        <div id="endSuggestions" class="autocomplete-suggestions"></div>
 
-    <button onclick="calculatePrice()">Calculer</button>
+        <button onclick="calculatePrice()">Calculer</button>
 
-    <p id="result">Prix estimé : - €</p>
+        <p id="result">Prix estimé : - €</p>
+    </div>
 
     <script>
-        const apiKey = "5b3ce3597851110001cf6248ce52305d63b541e9b030f687415cb54f"; // Remplace avec ta clé API
+        const apiKey = "5b3ce3597851110001cf6248ce52305d63b541e9b030f687415cb54f";
+
+        async function getAddressSuggestions(query, type) {
+            if (query.length < 3) return;
+            
+            const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${apiKey}&text=${encodeURIComponent(query)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (!data.features || data.features.length === 0) return;
+
+            const container = type === 'start' ? document.getElementById("startSuggestions") : document.getElementById("endSuggestions");
+            container.innerHTML = "";
+
+            data.features.forEach(feature => {
+                const div = document.createElement("div");
+                div.textContent = feature.properties.label;
+                div.onclick = () => {
+                    document.getElementById(type === 'start' ? "startAddress" : "endAddress").value = feature.properties.label;
+                    container.innerHTML = "";
+                };
+                container.appendChild(div);
+            });
+        }
 
         async function getCoordinates(address) {
             const url = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(address)}`;
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
+            const response = await fetch(url);
+            const data = await response.json();
 
-                if (!data.features || data.features.length === 0) {
-                    throw new Error("Adresse introuvable.");
-                }
-
-                const coords = data.features[0].geometry.coordinates;
-                return { lng: coords[0], lat: coords[1] };
-            } catch (error) {
-                console.error("Erreur géocodage:", error);
-                alert("Erreur : Impossible de récupérer les coordonnées.");
+            if (!data.features || data.features.length === 0) {
+                alert("Adresse introuvable.");
                 return null;
             }
+
+            return data.features[0].geometry.coordinates;
         }
 
         async function calculatePrice() {
@@ -82,10 +75,11 @@
             const endCoords = await getCoordinates(endAddress);
 
             if (!startCoords || !endCoords) {
+                alert("Erreur de géolocalisation.");
                 return;
             }
 
-            const routeUrl = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords.lng},${startCoords.lat}&end=${endCoords.lng},${endCoords.lat}`;
+            const routeUrl = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords[0]},${startCoords[1]}&end=${endCoords[0]},${endCoords[1]}`;
 
             try {
                 const response = await fetch(routeUrl);
@@ -95,20 +89,16 @@
                     throw new Error("Itinéraire non trouvé.");
                 }
 
-                const distanceMeters = data.routes[0].summary.distance;
-                const distanceKm = distanceMeters / 1000;
-
+                const distanceKm = data.routes[0].summary.distance / 1000;
                 if (isNaN(distanceKm) || distanceKm <= 0) {
                     throw new Error("Distance invalide.");
                 }
 
-                // Tarification mise à jour
-                const baseFare = 2;  // Prix de départ
-                const perKm = 1.5;    // Prix par km
-                const minPrice = 5;   // Prix minimum
-
+                const baseFare = 2;
+                const perKm = 1.5;
+                const minPrice = 5;
                 let price = baseFare + (distanceKm * perKm);
-                price = Math.max(price, minPrice); // S'assurer que le prix est au moins le minimum
+                price = Math.max(price, minPrice);
 
                 document.getElementById("result").innerText = `Prix estimé : ${price.toFixed(2)} €`;
             } catch (error) {
