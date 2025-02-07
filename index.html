@@ -4,23 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulateur VTC</title>
-    <link rel="stylesheet" href="styles.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        input, button {
-            margin: 10px;
-            padding: 10px;
-            font-size: 16px;
-            width: 80%;
-        }
-        p {
-            font-size: 18px;
-            font-weight: bold;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        input, button { margin: 5px; padding: 10px; font-size: 16px; width: 80%; }
+        p { font-size: 18px; font-weight: bold; }
         .autocomplete-suggestions {
             position: absolute;
             background: white;
@@ -56,9 +43,8 @@
     <p id="result">Prix estimé : - €</p>
 
     <script>
-        const apiKey = "5b3ce3597851110001cf6248ce52305d63b541e9b030f687415cb54f"; // Ta clé API
+        const apiKey = "5b3ce3597851110001cf6248ce52305d63b541e9b030f687415cb54f"; // Remplace avec ta clé API
 
-        // Fonction pour obtenir les suggestions d'adresse
         async function getAddressSuggestions(query, inputElement, suggestionsContainer) {
             if (query.length < 3) {
                 suggestionsContainer.innerHTML = "";
@@ -91,24 +77,21 @@
             }
         }
 
-        // Écouteur pour les suggestions sur l'adresse de départ
         document.getElementById("startAddress").addEventListener("input", function () {
             getAddressSuggestions(this.value, this, document.getElementById("startSuggestions"));
         });
 
-        // Écouteur pour les suggestions sur l'adresse d'arrivée
         document.getElementById("endAddress").addEventListener("input", function () {
             getAddressSuggestions(this.value, this, document.getElementById("endSuggestions"));
         });
 
-        // Fonction pour récupérer les coordonnées d'une adresse
         async function getCoordinates(address) {
             const geoUrl = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(address)}`;
 
             try {
                 const response = await fetch(geoUrl);
                 const data = await response.json();
-
+               
                 if (!data.features || data.features.length === 0) {
                     throw new Error("Adresse introuvable.");
                 }
@@ -122,7 +105,6 @@
             }
         }
 
-        // Fonction pour calculer le prix
         async function calculatePrice() {
             const startAddress = document.getElementById("startAddress").value;
             const endAddress = document.getElementById("endAddress").value;
@@ -158,8 +140,8 @@
 
                 // Tarification améliorée
                 const baseFare = 2;  // Prix de départ
-                const perKm = 1.5;   // Prix par km
-                const minPrice = 5;  // Prix minimum
+                const perKm = 1.5;    // Prix par km
+                const minPrice = 5;   // Prix minimum
 
                 let price = baseFare + (distanceKm * perKm);
                 price = Math.max(price, minPrice); // S'assurer que le prix est au moins le minimum
