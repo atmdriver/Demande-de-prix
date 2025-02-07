@@ -1,26 +1,7 @@
-const apiKey = '5b3ce3597851110001cf6248ce52305d63b541e9b030f687415cb54f';
-
-async function getCoordinates(address) {
-    const response = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(address)}`);
-    const data = await response.json();
-    if (data.features && data.features.length > 0) {
-        return data.features[0].geometry.coordinates;
-    }
-    return null;
-}
-
-async function getRouteDistance(start, end) {
-    const response = await fetch(`https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${start[0]},${start[1]}&end=${end[0]},${end[1]}`);
-    const data = await response.json();
-    if (data.routes && data.routes.length > 0) {
-        return data.routes[0].summary.distance / 1000; // Distance en kilomètres
-    }
-    return null;
-}
-
 async function calculerPrix() {
     const depart = document.getElementById('depart').value;
     const arrivee = document.getElementById('arrivee').value;
+    const dateDepart = document.getElementById('dateDepart').value;
     const heureDepart = document.getElementById('heureDepart').value;
     const gammeVoiture = document.getElementById('gammeVoiture').value;
 
@@ -34,7 +15,14 @@ async function calculerPrix() {
             const heure = parseInt(heureDepart.split(':')[0]);
             const tarifNuit = heure >= 20 || heure < 6 ? 1.2 : 1.0; // Majoration de nuit
 
-            const prixTotal = distance * tarifBase * tarifNuit;
+            // Vous pouvez utiliser la date pour des calculs supplémentaires
+            const date = new Date(dateDepart);
+            const jourSemaine = date.getDay(); // 0 pour Dimanche, 1 pour Lundi, etc.
+
+            // Exemple: Tarif majoré le weekend
+            const tarifWeekend = jourSemaine === 0 || jourSemaine === 6 ? 1.1 : 1.0;
+
+            const prixTotal = distance * tarifBase * tarifNuit * tarifWeekend;
 
             document.getElementById('resultat').innerText = `Prix estimé: ${prixTotal.toFixed(2)} €`;
         } else {
@@ -44,34 +32,3 @@ async function calculerPrix() {
         document.getElementById('resultat').innerText = 'Adresses invalides.';
     }
 }
-
-// Autocomplétion des adresses
-document.getElementById('depart').addEventListener('input', async (e) => {
-    const query = e.target.value;
-    const response = await fetch(`https://api.openrouteservice.org/geocode/autocomplete?api_key=${apiKey}&text=${encodeURIComponent(query)}`);
-    const data = await response.json();
-    const datalist = document.getElementById('departList');
-    datalist.innerHTML = '';
-    if (data.features) {
-        data.features.forEach(feature => {
-            const option = document.createElement('option');
-            option.value = feature.properties.label;
-            datalist.appendChild(option);
-        });
-    }
-});
-
-document.getElementById('arrivee').addEventListener('input', async (e) => {
-    const query = e.target.value;
-    const response = await fetch(`https://api.openrouteservice.org/geocode/autocomplete?api_key=${apiKey}&text=${encodeURIComponent(query)}`);
-    const data = await response.json();
-    const datalist = document.getElementById('arriveeList');
-    datalist.innerHTML = '';
-    if (data.features) {
-        data.features.forEach(feature => {
-            const option = document.createElement('option');
-            option.value = feature.properties.label;
-            datalist.appendChild(option);
-        });
-    }
-});
