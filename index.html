@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulateur VTC</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' fonts.gstatic.com media.githubusercontent.com githubusercontent.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; script-src 'self'">
     <style>
         body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
         input, button { margin: 5px; padding: 10px; font-size: 16px; width: 80%; }
@@ -45,6 +46,7 @@
     <script>
         const apiKey = "5b3ce3597851110001cf6248ce52305d63b541e9b030f687415cb54f"; // Remplace avec ta clé API
 
+        // Fonction pour récupérer les suggestions d'adresse
         async function getAddressSuggestions(query, inputElement, suggestionsContainer) {
             if (query.length < 3) {
                 suggestionsContainer.innerHTML = "";
@@ -77,6 +79,7 @@
             }
         }
 
+        // Gestion des entrées pour les adresses de départ et d'arrivée
         document.getElementById("startAddress").addEventListener("input", function () {
             getAddressSuggestions(this.value, this, document.getElementById("startSuggestions"));
         });
@@ -85,6 +88,7 @@
             getAddressSuggestions(this.value, this, document.getElementById("endSuggestions"));
         });
 
+        // Fonction pour récupérer les coordonnées des adresses
         async function getCoordinates(address) {
             const geoUrl = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(address)}`;
 
@@ -105,6 +109,7 @@
             }
         }
 
+        // Fonction pour calculer le prix en fonction des adresses
         async function calculatePrice() {
             const startAddress = document.getElementById("startAddress").value;
             const endAddress = document.getElementById("endAddress").value;
