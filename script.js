@@ -67,3 +67,52 @@ async function calculerPrix() {
         document.getElementById('resultat').innerText = 'Adresses invalides.';
     }
 }
+async function calculerPrix() {
+    console.log("Début du calcul du prix...");
+
+    const depart = document.getElementById('depart').value;
+    const arrivee = document.getElementById('arrivee').value;
+    const heureDepart = document.getElementById('heureDepart').value;
+    const gammeVoiture = document.getElementById('gammeVoiture').value;
+
+    console.log("Adresse de départ :", depart);
+    console.log("Adresse d'arrivée :", arrivee);
+
+    if (!depart || !arrivee) {
+        console.error("Adresses manquantes.");
+        document.getElementById('resultat').innerText = 'Veuillez remplir les adresses de départ et d\'arrivée.';
+        return;
+    }
+
+    console.log("Récupération des coordonnées de départ...");
+    const startCoords = await getCoordinates(depart);
+    console.log("Coordonnées de départ :", startCoords);
+
+    console.log("Récupération des coordonnées d'arrivée...");
+    const endCoords = await getCoordinates(arrivee);
+    console.log("Coordonnées d'arrivée :", endCoords);
+
+    if (startCoords && endCoords) {
+        console.log("Calcul de la distance...");
+        const distance = await getRouteDistance(startCoords, endCoords);
+        console.log("Distance calculée :", distance);
+
+        if (distance) {
+            console.log("Calcul du prix...");
+            const tarifBase = gammeVoiture === 'berline' ? 1.5 : 2.0;
+            const heure = parseInt(heureDepart.split(':')[0]);
+            const tarifNuit = heure >= 20 || heure < 6 ? 1.2 : 1.0;
+
+            const prixTotal = distance * tarifBase * tarifNuit;
+            console.log("Prix total calculé :", prixTotal);
+
+            document.getElementById('resultat').innerText = `Prix estimé: ${prixTotal.toFixed(2)} €`;
+        } else {
+            console.error("Distance non calculée.");
+            document.getElementById('resultat').innerText = 'Impossible de calculer la distance.';
+        }
+    } else {
+        console.error("Coordonnées invalides.");
+        document.getElementById('resultat').innerText = 'Adresses invalides.';
+    }
+}
