@@ -4,11 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulateur VTC</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' fonts.gstatic.com media.githubusercontent.com githubusercontent.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; script-src 'self'">
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        input, button { margin: 5px; padding: 10px; font-size: 16px; width: 80%; }
-        p { font-size: 18px; font-weight: bold; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        input, button {
+            margin: 5px;
+            padding: 12px;
+            font-size: 16px;
+            width: 80%;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        p {
+            font-size: 18px;
+            font-weight: bold;
+        }
         .autocomplete-suggestions {
             position: absolute;
             background: white;
@@ -16,8 +39,8 @@
             max-height: 150px;
             overflow-y: auto;
             width: 80%;
-            margin: auto;
             left: 10%;
+            z-index: 1000;
         }
         .autocomplete-suggestions div {
             padding: 10px;
@@ -46,7 +69,6 @@
     <script>
         const apiKey = "5b3ce3597851110001cf6248ce52305d63b541e9b030f687415cb54f"; // Remplace avec ta clé API
 
-        // Fonction pour récupérer les suggestions d'adresse
         async function getAddressSuggestions(query, inputElement, suggestionsContainer) {
             if (query.length < 3) {
                 suggestionsContainer.innerHTML = "";
@@ -79,7 +101,6 @@
             }
         }
 
-        // Gestion des entrées pour les adresses de départ et d'arrivée
         document.getElementById("startAddress").addEventListener("input", function () {
             getAddressSuggestions(this.value, this, document.getElementById("startSuggestions"));
         });
@@ -88,7 +109,6 @@
             getAddressSuggestions(this.value, this, document.getElementById("endSuggestions"));
         });
 
-        // Fonction pour récupérer les coordonnées des adresses
         async function getCoordinates(address) {
             const geoUrl = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(address)}`;
 
@@ -109,7 +129,6 @@
             }
         }
 
-        // Fonction pour calculer le prix en fonction des adresses
         async function calculatePrice() {
             const startAddress = document.getElementById("startAddress").value;
             const endAddress = document.getElementById("endAddress").value;
@@ -138,18 +157,16 @@
 
                 const distanceKm = data.routes[0].summary.distance / 1000;
 
-                // Vérification de la distance
                 if (distanceKm <= 0 || isNaN(distanceKm)) {
                     throw new Error("Distance invalide.");
                 }
 
-                // Tarification améliorée
                 const baseFare = 2;  // Prix de départ
                 const perKm = 1.5;    // Prix par km
                 const minPrice = 5;   // Prix minimum
 
                 let price = baseFare + (distanceKm * perKm);
-                price = Math.max(price, minPrice); // S'assurer que le prix est au moins le minimum
+                price = Math.max(price, minPrice);
 
                 document.getElementById("result").innerText = `Prix estimé : ${price.toFixed(2)} €`;
             } catch (error) {
