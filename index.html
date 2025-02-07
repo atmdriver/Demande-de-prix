@@ -32,7 +32,7 @@
             try {
                 const response = await fetch(geoUrl);
                 const data = await response.json();
-                
+               
                 if (data.features.length === 0) {
                     throw new Error("Adresse introuvable.");
                 }
@@ -62,10 +62,22 @@
                 return;
             }
 
-            const routeUrl = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords.lng},${startCoords.lat}&end=${endCoords.lng},${endCoords.lat}`;
+            const routeUrl = "https://api.openrouteservice.org/v2/directions/driving-car";
+            const bodyData = {
+                coordinates: [[startCoords.lng, startCoords.lat], [endCoords.lng, endCoords.lat]],
+                format: "json"
+            };
 
             try {
-                const response = await fetch(routeUrl);
+                const response = await fetch(routeUrl, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": apiKey,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(bodyData)
+                });
+
                 const data = await response.json();
 
                 if (!data.routes || data.routes.length === 0) {
