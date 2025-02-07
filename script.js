@@ -1,5 +1,3 @@
-const apiKey = '5b3ce3597851110001cf6248ce52305d63b541e9b030f687415cb54f';
-
 async function getCoordinates(address) {
     const response = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(address)}`);
     const data = await response.json();
